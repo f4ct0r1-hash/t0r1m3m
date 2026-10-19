@@ -52,6 +52,6 @@ A custom in-memory database solution written in "Go"
 - **What I Did:**
   - `cmd/server`: 클라이언트의 접속을 대기하고 메시지를 에코(Echo)하는 데몬 서버 뼈대 작성
   - `cmd/cli`: 소켓 파일에 접속해 명령어를 전달하고 응답을 받는 CLI 클라이언트 제작
-- **💡 Troubleshooting & Learnings:**
+- **Troubleshooting & Learnings:**
   - **OS 호환성 이슈:** 리눅스는 `/tmp/t0r1m3m.sock` 경로를 그대로 쓰면 되지만, 윈도우 환경을 고려해 `os.TempDir()` 및 파이프 경로 분기 처리를 적용했습니다.
   - **소켓 파일 잔여 문제:** 데몬이 비정상 종료되었을 때 이전에 쓰던 소켓 파일이 남아있어 `bind: address already in use` 에러가 발생하는 것을 확인, 서버 구동 시 기존 소켓 파일을 안전하게 삭제하는 로직을 추가했습니다.
