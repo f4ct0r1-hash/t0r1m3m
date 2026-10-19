@@ -25,3 +25,18 @@ A custom in-memory database solution written in "Go"
   * **메모리 관리 (Memory Management):** 효율적인 자원 할당 및 관리
   * **프로토콜 처리 (Protocol Handling):** 커스텀 데이터 통신 규격 및 패킷 처리
   * **CLI 레이어 (Command-Line Interface):** 사용자 상호작용을 위한 터미널 인터페이스 구현
+
+---
+
+## [ 4. 파일 설명 ]
+이 프로젝트에 대한 경로 별 설명입니다.
+
+```text
+
+├── cmd/
+│   ├── cli
+│        └── main.go     # CLI 레이어 진입점      
+│   └── server
+│        └── main.go     # (리눅스)데몬 / (윈도우)서비스 진입점
+├── internal/             # 내부 핵심 로직(차차 추가될 예정)
+└── README.md
