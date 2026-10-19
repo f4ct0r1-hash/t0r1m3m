@@ -13,8 +13,7 @@ A custom in-memory database solution written in "Go"
 ## [ 2. 프로젝트 사용 언어 ]
 이 프로젝트에서 사용된 프로그래밍 언어입니다.
 
-* **Language:**
-  * ![Go](https://img.shields.io/badge/Go-00ADD8?style=flat-square&logo=go&logoColor=white)
+* **Language:** ![Go](https://img.shields.io/badge/Go-00ADD8?style=flat-square&logo=go&logoColor=white)
 
 ---
 
