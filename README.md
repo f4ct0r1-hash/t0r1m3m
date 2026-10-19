@@ -1,10 +1,6 @@
 # t0r1m3m
 A custom in-memory database solution written in "Go"
 
-# 프로젝트 이름 (Project Title)
-
-프로젝트에 대한 한 줄 요약을 여기에 적어주세요.
-
 ---
 
 ## [ 1. 프로젝트 진행 배경 ]
