@@ -65,3 +65,6 @@ A custom in-memory database solution written in "Go"
 - **Troubleshooting & Learnings:**
   - **동시성 제어:** 여러 프로세스나 고루틴이 동시에 메모리 스토리지에 접근할 때 발생할 수 있는 `Race Condition을 방지`하기 위해 읽기에는 `sync.RWMutex.RLock()`, 쓰기에는 `sync.RWMutex.Lock()`을 적용하여 안정성을 높였습니다.
   - **프로토콜 파싱:** `strings.SplitN`을 사용하여 값이 공백을 포함하더라도 안전하게 파싱될 수 있도록 명령어 인자 분리 로직을 정교화했습니다.
+
+## [ 6. 개발자 각종 링크 ]
+[개발자의 트위터로 이동](https://x.com/f4ct0r1-hash)
