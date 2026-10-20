@@ -39,6 +39,8 @@ A custom in-memory database solution written in "Go"
 │   └── server
 │        └── main.go     # (리눅스)데몬 / (윈도우)서비스 진입점
 ├── internal/             # 내부 핵심 로직(차차 추가될 예정)
+│   └── storage
+│        └── store.go    # 인메모리 스토리지 구현
 └── README.md
 ```
 
