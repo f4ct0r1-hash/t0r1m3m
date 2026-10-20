@@ -55,3 +55,13 @@ A custom in-memory database solution written in "Go"
 - **Troubleshooting & Learnings:**
   - **OS 호환성 이슈:** 리눅스는 `/tmp/t0r1m3m.sock` 경로를 그대로 쓰면 되지만, 윈도우 환경을 고려해 `os.TempDir()` 및 파이프 경로 분기 처리를 적용했습니다.
   - **소켓 파일 잔여 문제:** 데몬이 비정상 종료되었을 때 이전에 쓰던 소켓 파일이 남아있어 `bind: address already in use` 에러가 발생하는 것을 확인, 서버 구동 시 기존 소켓 파일을 안전하게 삭제하는 로직을 추가했습니다.
+
+### [Day 2] 명령어 파서 및 인메모리 스토리지 구현 (2026-10-20 10:20)
+- **Goal:** 단순 서버에서 벗어나 데이터를 RAM에 저장하고 조회할 수 있는 **인메모리 스토리지 엔진**과 **텍스트 명령어 파서** 장착
+- **What I Did:**
+  - `internal/storage/store.go`: Go 기본 해시맵과 `sync.RWMutex`를 결합하여 다중 고루틴 환경에서 `MemStore` 구조체 구현 (`Set`, `Get` 메서드)
+  - `cmd/server/main.go`: 클라이언트에서 보낸 텍스트 스트림을 줄바꿈(`\n`)과 공백(` `) 기준으로 쪼개어 `SET`, `GET` 명령어로 해석하는 파서 로직 추가
+  - `cmd/cli/main.go`: 터미널 인자(`os.Args`)를 활용해 사용자가 직접 `SET key value`나 `GET key` 명령어를 입력하고 서버와 통신할 수 클라이언트 고도화
+- **Troubleshooting & Learnings:**
+  - **동시성 제어:** 여러 프로세스나 고루틴이 동시에 메모리 스토리지에 접근할 때 발생할 수 있는 `Race Condition을 방지`하기 위해 읽기에는 `sync.RWMutex.RLock()`, 쓰기에는 `sync.RWMutex.Lock()`을 적용하여 안정성을 높였습니다.
+  - **프로토콜 파싱:** `strings.SplitN`을 사용하여 값이 공백을 포함하더라도 안전하게 파싱될 수 있도록 명령어 인자 분리 로직을 정교화했습니다.

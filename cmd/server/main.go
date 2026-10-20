@@ -7,7 +7,9 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strings"
 	"syscall"
+	"t0r1m3m/internal/storage"
 )
 
 // OS별 임시 폴더에 안전하게 소켓 파일 경로 생성 (윈도우/리눅스 공통)
@@ -41,7 +43,7 @@ func main() {
 		return
 	}
 	defer listener.Close()
-
+	db := storage.NewMemStore()
 	fmt.Printf("T0r1m3m Daemon is running on [%s]\n", socketPath)
 
 	// 안전한 종료(Ctrl+C 등)를 위한 시그널 처리
@@ -65,23 +67,54 @@ func main() {
 			break
 		}
 		// 각 클라이언트를 고루틴으로 병렬 처리
-		go handleConnection(conn)
+		go handleConnection(conn, db)
 	}
 }
 
-func handleConnection(conn net.Conn) {
+func handleConnection(conn net.Conn, db *storage.MemStore) {
 	defer conn.Close()
 
 	// 클라이언트가 보낸 메시지를 줄바꿈(\n) 단위로 읽기
 	reader := bufio.NewReader(conn)
-	message, err := reader.ReadString('\n')
+	line, err := reader.ReadString('\n')
 	if err != nil {
 		return
 	}
 
-	fmt.Printf("📥 Received from client: %s", message)
+	line = strings.TrimSpace(line)
+	parts := strings.SplitN(line, " ", 3)
 
-	// 서버 응답 전송 (Echo)
-	response := "ACK: " + message
-	_, _ = conn.Write([]byte(response))
+	if len(parts) == 0 {
+		_, _ = conn.Write([]byte("ERR empty command\n"))
+		return
+	}
+
+	cmd := strings.ToUpper(parts[0])
+	switch cmd {
+	case "SET":
+		if len(parts) < 3 {
+			_, _ = conn.Write([]byte("ERR wrong number of arguments for 'SET'\n"))
+			return
+		}
+		key, value := parts[1], parts[2]
+		db.Set(key, value)
+		_, _ = conn.Write([]byte("OK\n"))
+		fmt.Printf("[SET] %s = %s\n", key, value)
+	case "GET":
+		if len(parts) < 2 {
+			_, _ = conn.Write([]byte("ERR wrong number of arguments for 'GET'\n"))
+			return
+		}
+		key := parts[1]
+		val, exists := db.Get(key)
+		if !exists {
+			_, _ = conn.Write([]byte("(nil)\n"))
+			fmt.Printf("[GET] %s (not found)\n", key)
+			return
+		}
+		_, _ = conn.Write([]byte(val + "\n"))
+		fmt.Printf("[GET] %s = %s\n", key, val)
+	default:
+		_, _ = conn.Write([]byte("ERR unknown command \n"))
+	}
 }

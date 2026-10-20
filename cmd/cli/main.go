@@ -6,6 +6,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 // 서버와 동일한 소켓 경로 생성 함수
@@ -17,6 +18,18 @@ func getSocketPath() string {
 }
 
 func main() {
+	if len(os.Args) < 2 {
+		if os.Args[1] == "SET" {
+			fmt.Println("error 1")
+			return
+		}
+		if os.Args[1] == "GET" {
+			fmt.Println("error 2")
+			return
+		}
+	}
+
+	command := strings.Join(os.Args[1:], " ") + "\n"
 	socketPath := getSocketPath()
 
 	// 데몬 서버의 유닉스 소켓에 연결
@@ -27,21 +40,17 @@ func main() {
 	}
 	defer conn.Close()
 
-	// 서버로 보낼 테스트 메시지 (\n 필수)
-	message := "Hello Tori, Set up connection!\n"
-	_, err = conn.Write([]byte(message))
+	_, err = conn.Write([]byte(command))
 	if err != nil {
-		fmt.Printf("Failed to send message: %v\n", err)
+		fmt.Printf("Failed to send command: %v\n", err)
 		return
 	}
 
-	// 서버로부터 응답 읽기
 	reader := bufio.NewReader(conn)
 	response, err := reader.ReadString('\n')
 	if err != nil {
-		fmt.Printf("Failed to read response: %v\n", err)
+		fmt.Printf("failed to read response: %v\n", err)
 		return
 	}
-
-	fmt.Printf("✨ Response from server: %s", response)
+	fmt.Print(response)
 }
