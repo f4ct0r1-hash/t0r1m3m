@@ -67,4 +67,4 @@ A custom in-memory database solution written in "Go"
   - **프로토콜 파싱:** `strings.SplitN`을 사용하여 값이 공백을 포함하더라도 안전하게 파싱될 수 있도록 명령어 인자 분리 로직을 정교화했습니다.
 
 ## [ 6. 개발자 각종 링크 ]
-[개발자의 트위터로 이동](https://x.com/f4ct0r1-hash)
+[개발자의 트위터로 이동](https://x.com/f4ct0r1_hash)
