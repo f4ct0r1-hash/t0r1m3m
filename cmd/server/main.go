@@ -10,6 +10,7 @@ import (
 	"strings"
 	"syscall"
 	"t0r1m3m/internal/storage"
+	"time"
 )
 
 // OS별 임시 폴더에 안전하게 소켓 파일 경로 생성 (윈도우/리눅스 공통)
@@ -76,45 +77,106 @@ func handleConnection(conn net.Conn, db *storage.MemStore) {
 
 	// 클라이언트가 보낸 메시지를 줄바꿈(\n) 단위로 읽기
 	reader := bufio.NewReader(conn)
-	line, err := reader.ReadString('\n')
-	if err != nil {
-		return
-	}
 
-	line = strings.TrimSpace(line)
-	parts := strings.SplitN(line, " ", 3)
-
-	if len(parts) == 0 {
-		_, _ = conn.Write([]byte("ERR empty command\n"))
-		return
-	}
-
-	cmd := strings.ToUpper(parts[0])
-	switch cmd {
-	case "SET":
-		if len(parts) < 3 {
-			_, _ = conn.Write([]byte("ERR wrong number of arguments for 'SET'\n"))
+	for {
+		line, err := reader.ReadString('\n')
+		if err != nil {
 			return
 		}
-		key, value := parts[1], parts[2]
-		db.Set(key, value)
-		_, _ = conn.Write([]byte("OK\n"))
-		fmt.Printf("[SET] %s = %s\n", key, value)
-	case "GET":
-		if len(parts) < 2 {
-			_, _ = conn.Write([]byte("ERR wrong number of arguments for 'GET'\n"))
-			return
+		fmt.Printf("DEBUG: raw input -> %q\n", line)
+
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
 		}
-		key := parts[1]
-		val, exists := db.Get(key)
-		if !exists {
-			_, _ = conn.Write([]byte("(nil)\n"))
-			fmt.Printf("[GET] %s (not found)\n", key)
-			return
+
+		parts := strings.SplitN(line, " ", 4)
+		cmd := strings.ToUpper(parts[0])
+
+		switch cmd {
+		case "SET":
+			if len(parts) < 3 {
+				_, _ = conn.Write([]byte("ERR wrong number of arguments for 'SET'\n"))
+				continue
+			}
+			key, value := parts[1], parts[2]
+			db.Set(key, value)
+			_, _ = conn.Write([]byte("OK\n"))
+			fmt.Printf("[SET] %s = %s\n", key, value)
+
+		case "SETEX":
+			fmt.Printf("%s\n", parts)
+			fmt.Printf("%d\n", len(parts))
+			if len(parts) < 4 {
+				_, _ = conn.Write([]byte("ERR wrong number of arguments for 'SETEX'\n"))
+				continue
+			}
+			key := parts[1]
+			secStr := parts[2]
+			value := parts[3]
+
+			var seconds int64
+			_, err := fmt.Sscanf(secStr, "%d", &seconds)
+			if err != nil || seconds <= 0 {
+				_, _ = conn.Write([]byte("ERR value is not an integer or out of range\n"))
+				continue
+			}
+			db.SetEx(key, value, time.Duration(seconds))
+			_, _ = conn.Write([]byte("OK\n"))
+			fmt.Printf("[SETEX] %s = %s (TTL: %ds)\n", key, value, seconds)
+
+		case "GET":
+			if len(parts) < 2 {
+				_, _ = conn.Write([]byte("ERR wrong number of arguments for 'GET'\n"))
+				continue
+			}
+			key := parts[1]
+			val, exists := db.Get(key)
+			if !exists {
+				_, _ = conn.Write([]byte("(nil)\n"))
+				fmt.Printf("[GET] %s (not found)\n", key)
+				continue
+			}
+			_, _ = conn.Write([]byte(val + "\n"))
+			fmt.Printf("[GET] %s = %s\n", key, val)
+
+		case "DEL":
+			if len(parts) < 2 {
+				_, _ = conn.Write([]byte("ERR wrong number of arguments for 'DEL'\n"))
+				continue
+			}
+			key := parts[1]
+			if db.Del(key) {
+				_, _ = conn.Write([]byte("(integer) 1\n"))
+				fmt.Printf("[DEL] %s\n", key)
+			} else {
+				_, _ = conn.Write([]byte("(integer) 0\n"))
+				fmt.Printf("[DEL] %s (not found)\n", key)
+			}
+
+		case "EXISTS":
+			if len(parts) < 2 {
+				_, _ = conn.Write([]byte("ERR wrong number of arguments for 'EXISTS'\n"))
+				continue
+			}
+			key := parts[1]
+			if db.Exists(key) {
+				_, _ = conn.Write([]byte("(integer) 1\n"))
+			} else {
+				_, _ = conn.Write([]byte("(integer) 0\n"))
+			}
+
+		case "KEYS":
+			keyList := db.Keys()
+			if len(keyList) == 0 {
+				_, _ = conn.Write([]byte("(empty list)\n"))
+				continue
+			}
+			response := strings.Join(keyList, " ") + "\n"
+			_, _ = conn.Write([]byte(response))
+
+		default:
+			_, _ = conn.Write([]byte("ERR unknown command \n"))
 		}
-		_, _ = conn.Write([]byte(val + "\n"))
-		fmt.Printf("[GET] %s = %s\n", key, val)
-	default:
-		_, _ = conn.Write([]byte("ERR unknown command \n"))
 	}
 }

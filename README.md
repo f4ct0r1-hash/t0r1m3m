@@ -68,6 +68,22 @@ A custom in-memory database solution written in "Go"
   - **동시성 제어:** 여러 프로세스나 고루틴이 동시에 메모리 스토리지에 접근할 때 발생할 수 있는 `Race Condition을 방지`하기 위해 읽기에는 `sync.RWMutex.RLock()`, 쓰기에는 `sync.RWMutex.Lock()`을 적용하여 안정성을 높였습니다.
   - **프로토콜 파싱:** `strings.SplitN`을 사용하여 값이 공백을 포함하더라도 안전하게 파싱될 수 있도록 명령어 인자 분리 로직을 정교화했습니다.
 
+### [Day 3] 핵심 명령어 확장, TTL(만료 시간) 및 CLI 대화형 REPL 구현 (2026-10-21 12:50)
+- **Goal:** 인메모리 DB로서의 실용성을 높이기 위해 데이터 조작/관리 명령어(`DEL`, `EXISTS`, `KEYS`)와 만료 시간(`SETEX`) 기능을 추가하고, 지속적인 소켓 연결 기반의 대화형 CLI(REPL) 구현
+- **What I Did:**
+  - `internal/storage/store.go` 고도화:
+    - 데이터와 만료 시각(`time.Time`)을 함께 관리하는 `item` 구조체 도입 및 동시성 제어(`sync.RWMutex`) 적용
+    - 데이터 삭제(`Del`), 존재 여부 확인(`Exists`), 전체 키 목록 조회(`KEYS`) 메서드 구현
+    - 백그라운드 고루틴(`time.Ticker`) 기반의 자동 만료 키 청소기(`startExpirationCleaner`) 구현
+  - `cmd/server/main.go` 파서 확장:
+    - `SETEX <key> <seconds> <value>` 명령어 파싱 로직 및 인자 검증 추가
+    - 클라이언트가 연결을 유지한 채 여러 명령어를 연속으로 처리할 수 있도록 소켓 핸들러 루프 구조 개선
+  - `cmd/cli/main.go` 대화형 REPL 모드 도입:
+    - 매번 프로그램을 새로 실행할 필요 없이 한 번의 소켓 연결로 연속 명령어를 주고받을 수 있는 대화형 인터프리터(`t0r1m3m> `) 구현
+- **💡 Troubleshooting & Learnings:**
+  - **인자 분리 최적화:** 공백이 포함된 다양한 명령어를 정확히 파싱하기 위해 `strings.SplitN`의 분할 개수를 유연하게 조정하고 명령어별 인자 개수 검증 로직을 정교화했습니다.
+  - **백그라운드 동시성 관리:** 백그라운드 고루틴이 주기적으로 메모리 맵을 순회하며 만료된 데이터를 안전하게 정리하도록 설계하여 메모리 누수를 방지하고 인메모리 캐시 서버의 기본기를 다졌습니다.
+
 ## [ 6. 개발자 각종 링크 ]
 - [개발자의 트위터로 이동](https://x.com/f4ct0r1_hash)
 - [개발자의 깃허브로 이동](https://github.com/f4ct0r1-hash)

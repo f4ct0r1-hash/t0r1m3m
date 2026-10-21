@@ -18,18 +18,6 @@ func getSocketPath() string {
 }
 
 func main() {
-	if len(os.Args) < 2 {
-		if os.Args[1] == "SET" {
-			fmt.Println("error 1")
-			return
-		}
-		if os.Args[1] == "GET" {
-			fmt.Println("error 2")
-			return
-		}
-	}
-
-	command := strings.Join(os.Args[1:], " ") + "\n"
 	socketPath := getSocketPath()
 
 	// 데몬 서버의 유닉스 소켓에 연결
@@ -40,17 +28,41 @@ func main() {
 	}
 	defer conn.Close()
 
-	_, err = conn.Write([]byte(command))
-	if err != nil {
-		fmt.Printf("Failed to send command: %v\n", err)
-		return
-	}
+	fmt.Println("Connected to t0r1m3m daemon!")
+	fmt.Println("Type 'quit' or 'exit' to close the client.")
+	fmt.Println("--------------------------------------")
 
+	scanner := bufio.NewScanner(os.Stdin)
 	reader := bufio.NewReader(conn)
-	response, err := reader.ReadString('\n')
-	if err != nil {
-		fmt.Printf("failed to read response: %v\n", err)
-		return
+
+	for {
+		fmt.Print("t0r1m3m> ")
+		if !scanner.Scan() {
+			break
+		}
+
+		input := strings.TrimSpace(scanner.Text())
+		if input == "" {
+			continue
+		}
+
+		// 종료 처리
+		if strings.ToLower(input) == "exit" || strings.ToLower(input) == "quit" {
+			fmt.Println("Good Bye~!")
+			break
+		}
+
+		_, err := conn.Write([]byte(input + "\n"))
+		if err != nil {
+			fmt.Printf("connection lost: %v\n", err)
+			break
+		}
+
+		response, err := reader.ReadString('\n')
+		if err != nil {
+			fmt.Printf("Failed to read response: %v\n", err)
+			break
+		}
+		fmt.Print(response)
 	}
-	fmt.Print(response)
 }
